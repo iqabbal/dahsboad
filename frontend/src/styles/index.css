@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background-color: #f3f4f7; /* Light gray background */
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    overflow: auto; /* Scrollbars only when necessary */
+    margin: 0; /* Remove default margin */
+}

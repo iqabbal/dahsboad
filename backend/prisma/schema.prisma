@@ -1,0 +1,50 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TB_USER {
+  id              Int             @id @default(autoincrement())
+  nom             String?         @db.VarChar(64)
+  prenom          String?         @db.VarChar(64)
+  username        String          @unique @db.VarChar(64)
+  email           String?         @db.VarChar(64)
+  hashed_password String          @db.VarChar(64)
+  TB_USER_ROLES   TB_USER_ROLES[]
+}
+
+model TB_USER_ROLES {
+  user_id  Int
+  role_id  Int
+  TB_ROLES TB_ROLES @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ROLE")
+  TB_USER  TB_USER  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_USER")
+
+  @@id([user_id, role_id], map: "PK_PRIM_KEY")
+}
+
+model TB_ROLES {
+  id                 Int                  @id @default(autoincrement())
+  libelle               String               @db.VarChar(255)  @unique()
+  TB_ROLE_PERMISSION TB_ROLE_PERMISSION[]
+  TB_USER_ROLES      TB_USER_ROLES[]
+}
+
+model TB_PERMISSION {
+  id                 Int                  @id @default(autoincrement())
+  libelle               String?              @db.VarChar(255)  @unique()
+  TB_ROLE_PERMISSION TB_ROLE_PERMISSION[]
+}
+
+model TB_ROLE_PERMISSION {
+  role_id       Int
+  permission_id Int
+  TB_PERMISSION TB_PERMISSION @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_PERM")
+  TB_ROLES      TB_ROLES      @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ROLE")
+
+  @@id([role_id, permission_id])
+}

@@ -1,0 +1,1 @@
+INSERT INTO "ShipSchema"."TB_USER"(nom,prenom,email,hashed_password,username) values ('admin','admin', 'admin@example.com', '$2b$10$Xq0jD3fQxyTJrkYuLmbi9eB3VE8U7F.BbxNnIyppkB/3rbQNjyp6G','admin');

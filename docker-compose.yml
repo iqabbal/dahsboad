@@ -1,0 +1,141 @@
+# x-superset-depends-on: &superset-depends-on
+#   - database
+#   - redis
+# x-superset-volumes:
+#   &superset-volumes # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+#   - ./superset/docker:/app/docker
+#   - superset_home:/app/superset_home
+
+# x-common-build: &common-build
+#   context: ./superset/.
+#   target: dev
+#   cache_from:
+#     - apache/superset-cache:3.10-slim-bookworm
+
+
+services:
+  database:
+    build: ./sql/
+    container_name: reporting4elman_database
+    env_file: ./.env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER_POSTGRES}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD_POSTGRES}
+      POSTGRES_DB: ${DATABASE_NAME_POSTGRES}
+      DATABASE_USER_SUPERSET: ${DATABASE_USER}
+      DATABASE_PASSWORD_SUPERSET: ${DATABASE_PASSWORD}
+      DATABASE_DB_SUPERSET: ${DATABASE_DB}
+    networks:
+        - reporting4elmannetwork
+    ports:
+      - "5432:5432"
+
+  backend:
+    build : ./backend/.
+    env_file: ./.env
+    container_name: reporting4elman_backend
+    volumes:
+      - ./backend/:/home/navimar
+       - /backend/node_modules
+    environment:
+      - DATABASE_URL=postgresql://younes:12345@database:5432/db?schema=ShipSchema
+    ports:
+      - "3001:3001"
+    networks:
+        - reporting4elmannetwork
+    depends_on:
+      - database
+
+  frontend:
+    build: ./frontend/.
+    container_name: reporting4elman_frontend
+    ports:
+      - "5173:5173"
+    networks:
+        - reporting4elmannetwork
+    depends_on:
+      - backend
+    command: npm run dev -- --host
+  # redis:
+  #   image: redis:7
+  #   container_name: superset_cache
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis:/data
+  #   networks:
+  #     - reporting4elmannetwork
+
+
+  # superset:
+  #   env_file: ./.env
+  #   build:
+  #     <<: *common-build
+  #   container_name: superset_app
+  #   command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+  #   user: "root"
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8088:8088
+  #   depends_on: *superset-depends-on
+  #   volumes: *superset-volumes
+  #   networks:
+  #     - reporting4elmannetwork
+
+  # superset-init:
+  #   container_name: superset_init
+  #   build:
+  #     <<: *common-build
+  #   command: ["/app/docker/docker-init.sh"]
+  #   env_file: ./.env
+  #   depends_on: *superset-depends-on
+  #   user: "root"
+  #   volumes: *superset-volumes
+  #   healthcheck:
+  #     disable: true
+  #   networks:
+  #     - reporting4elmannetwork
+
+  # superset-worker:
+  #   build:
+  #     <<: *common-build
+  #   container_name: superset_worker
+  #   command: ["/app/docker/docker-bootstrap.sh", "worker"]
+  #   env_file: ./.env
+  #   restart: unless-stopped
+  #   depends_on: *superset-depends-on
+  #   user: "root"
+  #   volumes: *superset-volumes
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "celery -A superset.tasks.celery_app:app inspect ping -d celery@$$HOSTNAME",
+  #       ]
+  #   networks:
+  #     - reporting4elmannetwork
+  # superset-worker-beat:
+  #   build:
+  #     <<: *common-build
+  #   container_name: superset_worker_beat
+  #   command: ["/app/docker/docker-bootstrap.sh", "beat"]
+  #   env_file: ./.env
+  #   restart: unless-stopped
+  #   depends_on: *superset-depends-on
+  #   user: "root"
+  #   volumes: *superset-volumes
+  #   healthcheck:
+  #     disable: true
+  #   networks:
+  #     - reporting4elmannetwork
+
+networks:
+  reporting4elmannetwork:
+    name: reporting4elmannetwork
+    driver: bridge
+
+
+volumes:
+  superset_home:
+    external: false
+  redis:
+    external: false
